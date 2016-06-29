@@ -1,0 +1,80 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{url}
+
+\begin{document}
+
+\title{Proof-of-Luck}
+
+\author{David Kerkeslager}
+
+\maketitle
+
+\begin{abstract}
+I propose a solution to the ``nothing at stake'' problem \cite{ethereum_problems} in cryptocurrencies, where a miner in a proof-of-stake cryptocurrency \cite{peercoin_paper} has no incentive to vote for one blockchain over another in the event of a fork. I observe that proof-of-work cryptocurrencies \cite{bitcoin_paper} do not have this problem because the miner's proof is cryptographically coupled to the previous block. I assert that the ``nothing at stake'' problem exists in existing proof-of-stake cryptocurrencies because they sever the link between previous blocks and the ability to mine a new block. Finally, I propose a system which reintroduces the link between previous blocks and the ability to mine and show how this prevents miners from voting for multiple blockchains in the event of a fork.
+\end{abstract}
+
+\newpage
+
+\section{The Problem with Proof-of-Stake: Nothing at Stake}
+
+Miners in a proof-of-stake system have no incentive to vote for one blockchain over another in the event of a fork.
+
+\section{Why doesn't Proof-of-Work have this problem?}
+
+Miners in a hashcash-based proof-of-work system can't vote for multiple blocks because their work is tied to the previous block and their proof-of-work is only valid for blocks which match the hash. Assuming a collision-resistant hash, the probability of a proof-of-work being valid for two previous blocks is negligible.
+
+In the case of a fork, a miner receives two blocks at close to the same time. In the Bitcoin implementation, the miner has a small incentive to vote for whichever block the miner receives first, as this gives more time for doing work. However, an irrational miner could begin work on a block which the miner receives later, and if the blocks were received with only a short gap in time between them, the miner only pays a small penalty for this behavior. However, this irrational behavior doesn't cause any harm to the security of the system, because the miner can only mine on one block, and later blocks mined on top of that block will provide consensus. This is analogous to roads: it doesn't matter which side of the road we drive on as long as everyone drives on the same side of the road.
+
+\section{Why not just use Proof-of-Work?}
+
+An astute reader might observe that we already have a solution to the ``nothing at stake'' problem: proof-of-work. However, proof-of-stake has a few advantages over proof-of-work. These advantages are worth noting because we wish to retain the advantages of proof-of-stake over proof-of-work when we solve the ``nothing at stake'' problem.
+
+\section{Solving the Problem: Picking a Side of the Road at Random}
+
+To solve this problem I propose a system in which only the owner of a coin, chosen at random at specific time intervals, may mine a block. We start by defining a value \(a_{cumulative}(c)\) for each coin id \(c\) such that:
+\[
+	a_{cumulative}(c) =
+	\begin{cases}
+		0 																& \mathrm{ if } \quad c = 0 \\
+		a_{cumulative}(c - 1) + a(c - 1) 	& \mathrm{ if } \quad c > 0 \\
+	\end{cases}
+\]
+where \(c \geq 0\) and \(a(c)\) is the coin age\footnote{The units in which coin age are measured seem to be unimportant to the security of our proposed system. However, if coin age is measured in minutes, then the entire table must be updated every minute. To avoid this, we can measure coin age in blocks since last spent. This allows us to calculate the coin age and the cumulative coin age only once per block.} of coin \(c\).
+
+To calculate this it helps to keep a table of \(c\), \(a(c)\) and \(a_{cumulative}(c)\) like this:
+\begin{center}
+  \begin{tabular}{ c | c | c }
+    \(c\) & \(a(c)\) & \(a_{cumulative}(c)\) \\ \hline
+    0 & 10 & 0 \\
+    1 & 8 & 10 \\
+    2 & 6 & 18 \\
+		3 & 4 & 24 \\
+		4 & 2 & 28 \\
+  \end{tabular}
+\end{center}
+
+
+
+
+\section{Pitfalls}
+
+It may be tempting to simplify the selection of the coin eligible to mine the next block by removing coin age from the process. We can do this easily by simply selecting:
+\[c_{eligible} = r(h_{previous} + t) \mod (c_{max} + 1)\]
+
+However, this means that miners must constantly monitor the blockchain for a situation in which their coins are eligible to mine a block. For coin holders with few coins, and therefore a low chance of becoming eligible to mine a block, the cost of constantly monitoring the blockchain would likely outweigh the potential for mining a block, thereby reducing the number of participating miners. Adding the element of coin age means that miners need only monitor the blockchain once they have accumulated sufficient block age that they have a reasonable chance of mining a block, thereby increasing participation in mining.
+
+\newpage
+
+\begin{thebibliography}{10}
+
+\bibitem[Ethereum2016]{ethereum_problems} \url{https://github.com/ethereum/wiki/wiki/Problems}
+
+\bibitem[Nakamoto2008]{bitcoin_paper} \url{https://bitcoin.org/bitcoin.pdf}
+
+\bibitem[KingNadal2012]{peercoin_paper} \url{https://peercoin.net/assets/paper/peercoin-paper.pdf}
+
+\end{thebibliography}
+
+\end{document}
